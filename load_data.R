@@ -97,3 +97,5 @@ pawns.data <- ciri %>%
          assn = factor(assn.clean, labels=c("Severely restricted", 
                                             "Limited", "Unrestricted"), 
                        ordered=TRUE))
+
+save(pawns.data, file="data/pawns_clean.RData")
