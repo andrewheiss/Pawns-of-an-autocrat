@@ -58,7 +58,7 @@ pol.inst <- read.dta("raw_data/DPI2012.dta") %>%
 uds <- read.csv("raw_data/uds_summary.csv") %>%
   rename(YEAR = year, COW = cowcode,
          uds_mean = mean, uds_sd = sd, uds_median = median,
-         uds_025 = pct025, uds975 = pct975)
+         uds025 = pct025, uds975 = pct975)
 
 
 # International Country Risk Guide (ICRG)
@@ -83,6 +83,17 @@ p4 <- read.csv("raw_data/p4v2012.csv") %>%
   select(YEAR, POLITY, polity2)
 
 
+# Global Media Freedom Dataset, 1948-2012
+# http://faculty.uml.edu/Jenifer_whittenwoodring/MediaFreedomData_000.aspx
+media.freedom <- read.csv("raw_data/Global_Media_Freedom_Data.csv") %>%
+  rename(YEAR = year, COW=ccode) %>%
+  mutate(mediascore = ifelse(mediascore == 8 | mediascore == 0, NA, mediascore),
+         mediascore = ifelse(mediascore == 4, 3, mediascore),
+         mediascore = factor(mediascore, 
+                              labels=c("Free", "Imperfectly Free", "Not Free"),
+                              ordered=TRUE))
+
+
 #-----------------------
 # Merge all that data!
 #-----------------------
@@ -92,6 +103,7 @@ pawns.data <- ciri %>%
   merge(p4, all.x=TRUE) %>%
   merge(uds, all.x=TRUE) %>%
   merge(icrg, all.x=TRUE) %>%
+  merge(media.freedom, all.x=TRUE) %>%
   mutate(year.group = factor(YEAR),
          assn.clean = ifelse(ASSN < 0, NA, ASSN),
          assn = factor(assn.clean, labels=c("Severely restricted", 
