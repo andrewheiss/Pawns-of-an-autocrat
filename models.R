@@ -1,33 +1,11 @@
-library(MASS)  # Must come before dplyr
+library(MASS)
 library(ordinal)
-library(plyr)
+library(dplyr)
 
+# General model: ASSN ~ regime type + stability + competitiveness
 
-
-
-ciri.plot <- assn.data %>%
-  select(year.group, assn, CTRY) %>%
-  na.omit()
-
-ggplot(ciri.plot, aes(x=assn)) + geom_bar() + facet_wrap(~ year.group)
-
-ggplot(assn.data, aes(x=uds_mean, y=assn)) + geom_point() + facet_wrap(~ year.group)
-
-ggplot(assn.data, aes(x=icrg_stability, y=uds_mean)) + geom_point() + geom_smooth(method="lm")
-ggplot(assn.data, aes(x=icrg_stability, y=assn)) + geom_point() + geom_smooth(method="lm")
-
-
-# TODO: Year fixed effects
-# TODO: Lag?
-# TODO: Check how likely it is to have stable vs. unstable autocracy vs. democracy (so I'm not just testing outliers)
-# TODO: Show variation in stability across UDS (to see if there's collinearity, too much correlation)
-# TODO: Control for other stuff
-# TODO: Simulate UDS scores + determine threshold for autocracy?
-# TODO: Use fancy stuff like decision trees, machine learning
-# TODO: See if switch is only the case in autocracies - run two models/predictions, one for high UDS, one for low UDS - it'd be really cool if switch only happens with low UDS
-# TODO: Restrictions on associations predict INGO shaming activity
-# TODO: Stability ~ shaming
-
+asdf <- clm(assn ~ uds_mean + icrg_stability + all.comp, data=pawns.data, link="logit", subset=(polity2 <= 0))
+summary(asdf)
 
 # Using ordinal::clm since predict.clm can return standard errors and 
 # predict.polr can't. #sadface because ordinal loads so slowly.
