@@ -2,20 +2,23 @@ library(MASS)
 library(ordinal)
 library(dplyr)
 
+load("data/pawns_clean.RData")
+
 # General model: ASSN ~ regime type + stability + competitiveness
 
 asdf <- clm(assn ~ uds_mean + icrg_stability + all.comp, data=pawns.data, link="logit", subset=(polity2 <= 0))
+asdf <- clm(assn ~ uds_mean + icrg_stability + all.comp, data=pawns.data, link="logit")
 summary(asdf)
 
 # Using ordinal::clm since predict.clm can return standard errors and 
 # predict.polr can't. #sadface because ordinal loads so slowly.
-model <- clm(assn ~ icrg_stability + uds_mean, data=assn.data, link="logit")
+model <- clm(assn ~ icrg_stability + uds_mean, data=pawns.data, link="logit")
 summary(model)
 
-model <- clm(assn ~ icrg_stability + uds_mean + YEAR, data=assn.data, link="logit")
+model <- clm(assn ~ icrg_stability + uds_mean + YEAR, data=pawns.data, link="logit")
 summary(model)
 
-model <- clm(assn ~ icrg_stability + polity2 + YEAR, data=assn.data, link="logit")
+model <- clm(assn ~ icrg_stability + polity2 + YEAR, data=pawns.data, link="logit")
 summary(model)
 
 newdata <- data.frame(icrg_stability = seq(1, 12, .05), 
