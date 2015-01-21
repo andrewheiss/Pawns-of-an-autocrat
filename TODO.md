@@ -1,7 +1,5 @@
 TODO: 
 
-* !!!! Country names not working right!!! ARGH!
-* Clean up final dataframe
 * theme_ath() too miminalist - add axes, gridlines
 * Figure out correct time frame, limit data to that
 * Visualize all variables

@@ -21,7 +21,15 @@ fix.999 <- function(x) {
 #--------------------------------
 # CIRI Human Rights Data
 # http://www.humanrightsdata.com/
-ciri <- read.csv("raw_data/CIRI Data 1981_2011 2014.04.14.csv")
+ciri <- read.csv("raw_data/CIRI Data 1981_2011 2014.04.14.csv") %>%
+  select(year = YEAR, cow = COW, assn = ASSN) %>%
+  # Handle duplicate COWs like USSR and Yugoslavia where names change
+  group_by(year, cow) %>%
+  summarize(assn = max(assn, na.rm=TRUE)) %>%
+  mutate(assn = ifelse(assn < 0, NA, assn),
+         assn = factor(assn, labels=c("Severely restricted",
+                                      "Limited", "Unrestricted"),
+                       ordered=TRUE))
 
 
 # National Elections Across Democracy and Autocracy (NELDA)
@@ -34,12 +42,13 @@ nelda <- read.dta("raw_data/nelda.dta") %>%
                                 nelda5 == "yes", TRUE, FALSE)) %>%
   group_by(ccode, year) %>%
   summarise(all.comp = all(competitive), num.elections = n()) %>%
-  rename(YEAR = year, COW = ccode)
+  rename(cow = ccode)
 
 
 # Database of Political Institutions 2012
 # http://go.worldbank.org/2EAGGLRZ40
 pol.inst <- read.dta("raw_data/DPI2012.dta") %>%
+  filter(!countryname %in% c("Turk Cyprus", "PRK")) %>%
   mutate(yrsoffc = fix.999(yrsoffc), oppfrac = fix.999(oppfrac),
          opp1seat = fix.999(opp1seat), totalseats = fix.999(totalseats),
          finittrm = factor(ifelse(finittrm == -999, NA, finittrm), 
@@ -47,18 +56,22 @@ pol.inst <- read.dta("raw_data/DPI2012.dta") %>%
   mutate(countryname = ifelse(countryname == "UAE", 
                               "United Arab Emirates", countryname),
          countryname = ifelse(countryname == "GDR", 
-                              "German Democratic Republic", countryname)) %>%
-  mutate(COW = countrycode(countryname, "country.name", "cown")) %>%
-  select(YEAR = year, COW, yrsoffc, finittrm, 
+                              "German Democratic Republic", countryname),
+         countryname = ifelse(countryname == "S. Africa",
+                              "South Africa", countryname),
+         countryname = ifelse(countryname == "Dom. Rep.",
+                              "Dominican Republic", countryname)) %>%
+  mutate(cow = countrycode(countryname, "country.name", "cown")) %>%
+  select(year, cow, yrsoffc, finittrm, 
          opp1vote, oppfrac, opp1seat, totalseats)
 
 
 # Unified Democracy Scores (UDS)
 # http://www.unified-democracy-scores.org/
 uds <- read.csv("raw_data/uds_summary.csv") %>%
-  rename(YEAR = year, COW = cowcode,
-         uds_mean = mean, uds_sd = sd, uds_median = median,
-         uds025 = pct025, uds975 = pct975)
+  rename(cow = cowcode, uds_mean = mean, uds_sd = sd, uds_median = median,
+         uds025 = pct025, uds975 = pct975) %>%
+  select(-country)
 
 
 # International Country Risk Guide (ICRG)
@@ -67,26 +80,25 @@ uds <- read.csv("raw_data/uds_summary.csv") %>%
 # http://www.prsgroup.com/wp-content/uploads/2012/11/icrgmethodology.pdf
 # http://library.duke.edu/data/collections/icrg
 icrg <- read.csv("raw_data/icrg_raw.csv") %>%
-  # Handle Germanys?
-  mutate(iso3 = countrycode(Country, "country.name", "iso3c"),
-         country.name = countrycode(iso3, "iso3c", "country.name"),
-         COW = countrycode(iso3, "iso3c", "cown")) %>%
-  gather(year, icrg_stability, -c(Country, iso3, country.name, COW)) %>%
-  mutate(YEAR = as.integer(gsub("X", "", as.character(year)))) %>%
-  select(-year)
+  mutate(cow = countrycode(Country, "country.name", "cown")) %>%
+  select(-Country) %>%
+  gather(year, icrg_stability, -cow) %>%
+  mutate(year = as.integer(gsub("X", "", as.character(year)))) %>%
+  # Handle duplicate COWs like Russia and Germany where names change
+  group_by(year, cow) %>%
+  summarize(icrg_stability = max(icrg_stability, na.rm=TRUE))
 
 
 # Polity IV
 # http://www.systemicpeace.org/polity/polity4.htm
 p4 <- read.csv("raw_data/p4v2012.csv") %>%
-  rename(YEAR = year, POLITY = ccode) %>%
-  select(YEAR, POLITY, polity2)
+  select(year, cow = ccode, polity2)
 
 
 # Global Media Freedom Dataset, 1948-2012
 # http://faculty.uml.edu/Jenifer_whittenwoodring/MediaFreedomData_000.aspx
 media.freedom <- read.csv("raw_data/Global_Media_Freedom_Data.csv") %>%
-  rename(YEAR = year, COW=ccode) %>%
+  select(year, cow=ccode, mediascore) %>%
   mutate(mediascore = ifelse(mediascore == 8 | mediascore == 0, NA, mediascore),
          mediascore = ifelse(mediascore == 4, 3, mediascore),
          mediascore = factor(mediascore, 
@@ -96,18 +108,15 @@ media.freedom <- read.csv("raw_data/Global_Media_Freedom_Data.csv") %>%
 
 #-----------------------
 # Merge all that data!
-#-----------------------
+#-----------------------  
 pawns.data <- ciri %>%
-  merge(pol.inst, all.x=TRUE) %>%
-  merge(nelda, all.x=TRUE) %>%
-  merge(p4, all.x=TRUE) %>%
-  merge(uds, all.x=TRUE) %>%
-  merge(icrg, all.x=TRUE) %>%
-  merge(media.freedom, all.x=TRUE) %>%
-  mutate(year.group = factor(YEAR),
-         assn.clean = ifelse(ASSN < 0, NA, ASSN),
-         assn = factor(assn.clean, labels=c("Severely restricted", 
-                                            "Limited", "Unrestricted"), 
-                       ordered=TRUE))
+  left_join(nelda, by=c("year", "cow")) %>%
+  left_join(pol.inst, by=c("year", "cow")) %>%
+  left_join(uds, by=c("year", "cow")) %>%
+  left_join(icrg, by=c("year", "cow")) %>%
+  left_join(p4, by=c("year", "cow")) %>%
+  left_join(media.freedom, by=c("year", "cow")) %>%
+  mutate(country = countrycode(cow, "cown", "country.name"),
+         iso3 = countrycode(cow, "cown", "iso3c"))
 
 save(pawns.data, file="data/pawns_clean.RData")
