@@ -15,8 +15,74 @@ summary(asdf)
 model <- clm(assn ~ icrg_stability + uds_mean, data=pawns.data, link="logit")
 summary(model)
 
-model <- clm(assn ~ icrg_stability + uds_mean + YEAR, data=pawns.data, link="logit")
+model <- polr(assn ~ icrg_stability + uds_mean + all.comp + year, data=pawns.data, method="logistic")
+model1 <- clm(assn ~ icrg_stability + uds_mean + all.comp, data=pawns.data, link="logit")
 summary(model)
+summary(model1)
+
+# THIS IS IT - JUST FIGURE OUT ROBUST CLUSTERED SEs, but this is random effects for year and country
+model2 <- clmm(assn ~ icrg_stability + uds_mean + all.comp + (1|year) + (1|country), data=pawns.data, link="logit", Hess=TRUE)
+summary(model2)
+model2$terms
+
+
+model3 <- clmm(assn ~ icrg_stability + uds_mean + all.comp + factor(year) + (1|country), data=pawns.data, link="logit", Hess=TRUE)
+summary(model3)
+
+library(lmtest)
+coeftest(model2, vcov=vcovHC(model2, cluster="country"))
+
+robust.clusterify(model2, pawns.data, pawns.data$country)
+
+robust.clusterify <- function(model, dat, cluster) {
+  attach(dat, warn.conflicts = F)
+  require(sandwich)
+  require(lmtest)
+  not <- attr(model$model,"na.action")
+    
+  if( ! is.null(not)) {  # only drop the NA values if there are any left
+    cluster <- cluster[-not]
+    dat <- dat[-not,]
+  }
+  
+  with(dat, {
+    M <- length(unique(cluster))
+    N <- length(cluster)
+    K <- model$rank
+    dfc <- (M/(M-1))*((N-1)/(N-K))
+    uj <- apply(estfun(model),2, function(x) tapply(x, cluster, sum));
+    vcovCL <- dfc*sandwich(model, meat=crossprod(uj)/N)
+    coefs <- coeftest(model, vcovCL, type="HC1")  # HC1 or HC0 are close to Stata
+    return(list(clcov=vcovCL, coefs=coefs))
+  })
+}
+
+
+library(pglm)
+op <- pglm(assn ~ icrg_stability + uds_mean + all.comp, data=pawns.data,
+           family = ordinal('logit'), R = 5, print.level = 3,
+           method = 'bfgs', index = c('country', "year"), model = "random")
+
+pooled.ologit <- pglm(as.numeric(assn) ~ icrg_stability + uds_mean, model=("pooling"), effect=("individual"), index=c("country", "year"), family=ordinal(link="logit"), data=pawns.data)
+summary(pooled.ologit)
+
+
+qwer <- orm(assn ~ icrg_stability + uds_mean + all.comp, data=pawns.data)
+summary(qwer)
+
+summary(op)
+
+library(glmmML)
+library(rms)
+
+data('Fairness', package = 'pglm')
+Parking <- subset(Fairness, good == 'parking')
+op <- pglm(as.numeric(answer) ~ education + rule,
+           Parking[1:105, ],
+           family = ordinal('probit'), R = 5, print.level = 3,
+           method = 'bfgs', index = 'id',  model = "random")
+summary(op)
+
 
 model <- clm(assn ~ icrg_stability + polity2 + YEAR, data=pawns.data, link="logit")
 summary(model)
