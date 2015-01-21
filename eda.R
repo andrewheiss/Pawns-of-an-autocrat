@@ -40,8 +40,8 @@ theme_ath <- function(base_size=12, base_family="Source Sans Pro Light") {
 # Description: "This variable indicates the extent to which the freedoms of assembly and association are subject to actual governmental limitations or restrictions (as opposed to strictly legal protections). A score of 0 indicates that citizens’ rights to freedom of assembly or association were severely restricted or denied completely to all citizens; a score of 1 indicates that these rights were limited for all citizens or severely restricted or denied for select groups; and a score of 2 indicates that these rights were virtually unrestricted and freely enjoyed by practically all citizens in a given year."
 
 assn.data <- pawns.data %>%
-  select(CTRY, YEAR, assn) %>% na.omit() %>% 
-  count(assn, YEAR) %>% group_by(assn) %>% 
+  select(country, year, assn) %>% na.omit() %>% 
+  count(assn, year) %>% group_by(assn) %>% 
   summarize(assn.n = length(n), assn.mean = mean(n),
             assn.sd = sd(n), assn.se = assn.sd / sqrt(assn.n)) %>%
   mutate(ci.mult = qt(0.95/2 + 0.5, assn.n),
@@ -69,8 +69,8 @@ ggplot(assn.data, aes(x=assn, y=assn.mean)) +
 #-----------------
 # ICRG government stability (icrg_stability)
 icrg.data <- pawns.data %>%
-  select(CTRY, YEAR, icrg_stability) %>% na.omit() %>%
-  group_by(YEAR) %>% 
+  select(country, year, icrg_stability) %>% na.omit() %>%
+  group_by(year) %>% 
   summarize(n = n(),
             icrg.mean = mean(icrg_stability),
             icrg.sd = sd(icrg_stability),
@@ -79,14 +79,14 @@ icrg.data <- pawns.data %>%
          ci = icrg.se * ci.mult)
 
 icrg.data1 <- pawns.data %>%
-  select(CTRY, YEAR, icrg_stability) %>% na.omit()
+  select(country, year, icrg_stability) %>% na.omit()
 
-ggplot(icrg.data, aes(x=YEAR, y=icrg.mean)) + 
+ggplot(icrg.data, aes(x=year, y=icrg.mean)) + 
   geom_pointrange(aes(ymin=icrg.mean - ci, ymax=icrg.mean + ci)) + 
   labs(x="Year", y="Government stability (ICRG)") +
   theme_ath()
 
-ggplot(icrg.data1, aes(x=YEAR, y=icrg_stability, group=YEAR)) + geom_violin() + theme_ath()
+ggplot(icrg.data1, aes(x=year, y=icrg_stability, group=year)) + geom_violin() + theme_ath()
 
 
 # Regime competitiveness
@@ -104,7 +104,7 @@ ggplot(icrg.data1, aes(x=YEAR, y=icrg_stability, group=YEAR)) + geom_violin() + 
 #--------------------------
 # UDS/Polity + assn
 plot.data <- pawns.data %>%
-  select(CTRY, YEAR, assn, uds_mean) %>% na.omit()
+  select(country, year, assn, uds_mean) %>% na.omit()
   
 ggplot(plot.data, aes(x=assn, y=uds_mean)) + 
   geom_violin() + 
@@ -114,7 +114,7 @@ ggplot(plot.data, aes(x=assn, y=uds_mean)) +
 
 # icrg + assn
 plot.data <- pawns.data %>%
-  select(CTRY, YEAR, assn, icrg_stability) %>% na.omit()
+  select(country, year, assn, icrg_stability) %>% na.omit()
 
 ggplot(plot.data, aes(x=assn, y=icrg_stability)) + 
   geom_violin() + 
@@ -131,7 +131,7 @@ ggplot(plot.data, aes(x=assn, y=icrg_stability)) +
 
 # icrg + uds
 plot.data <- pawns.data %>%
-  select(YEAR, CTRY, icrg_stability, uds_mean) %>% na.omit()
+  select(year, country, icrg_stability, uds_mean) %>% na.omit()
 
 ggplot(plot.data, aes(x=icrg_stability, y=uds_mean)) + 
   geom_point(alpha=0.5) + geom_smooth(method="lm") + 
