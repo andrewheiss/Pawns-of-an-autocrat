@@ -175,6 +175,14 @@ wdi.clean <- wdi.raw %>%
   select(-c(iso2c, iso3c, country, capital, longitude, latitude, income, lending))
 
 
+# KOF Index of Globalization, 2014
+# http://globalization.kof.ethz.ch/
+kof <- read.csv("raw_data/globalization_2014_long.csv", na.strings=".") %>%
+  mutate(cow = countrycode(code, "iso3c", "cown")) %>%
+  select(cow, year, globalization = index) %>%
+  filter(!is.na(cow))
+
+
 #-----------------------
 # Merge all that data!
 #-----------------------  
@@ -186,6 +194,7 @@ pawns.data <- ciri %>%
   left_join(p4, by=c("year", "cow")) %>%
   left_join(media.freedom, by=c("year", "cow")) %>%
   left_join(wdi.clean, by=c("year", "cow")) %>%
+  left_join(kof, by=c("year", "cow")) %>%
   mutate(country = countrycode(cow, "cown", "country.name"),
          iso3 = countrycode(cow, "cown", "iso3c"))
 
