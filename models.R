@@ -1,93 +1,134 @@
-library(MASS)
-library(ordinal)
+# Load libraries
+library(ordinal)  # Must come before dplyr because of slice()
 library(dplyr)
-library(magrittr)
 library(tidyr)
+library(magrittr)
 library(ggplot2)
+library(grid)
+library(Cairo)
+library(stargazer)
 
+# Load data and functions
 load("data/pawns_clean.RData")
-
-# General model: ASSN ~ regime type + stability + competitiveness
-
-# THIS IS IT - JUST FIGURE OUT ROBUST CLUSTERED SEs, but this is random effects for year and country
-model2 <- clmm(assn ~ icrg_stability + uds_mean + all.comp + 
-                 (1|year) + (1|country), 
-               data=pawns.data, link="logit", Hess=TRUE)
-summary(model2)
-
-# Predicted probabilities
-pred <- function(eta, theta, cat = 1:(length(theta) + 1), inv.link = plogis) {
-  Theta <- c(-1000, theta, 1000)
-  sapply(cat, function(j) inv.link(Theta[j + 1] - eta) - inv.link(Theta[j] - eta))
-}
-
-newdata <- expand.grid(icrg_stability = seq(1, 12, 1),
-                       uds_mean=mean(pawns.data$uds_mean, na.rm=TRUE),
-                       all.comp = c(0, 1),
-                       country=0, year=0)
-
-coefs <- c(model2$beta, unlist(model2$ST))
-xbetas <- sweep(newdata, MARGIN=2, coefs, `*`)
-
-# Make predictions
-pred.mat <- data.frame(pred(eta=rowSums(xbetas), theta=model2$Theta)) %>%
-  set_colnames(levels(pawns.data$assn))
-
-# Create plot data
-plot.data.single <- cbind(newdata, pred.mat) %>%
-  gather(assn, assn.prob, -c(1:ncol(newdata))) %>%
-  mutate(all.comp = factor(all.comp, labels=c("Not competitive", "Competitive")))
-
-# Plot
-assn.colours <- c("#8C2318", "#F2C45A", "#88A65E")
-ggplot(plot.data.single, aes(x=icrg_stability, y=assn.prob, colour=assn)) + 
-  geom_line(size=2) + 
-  labs(x="Government stability (ICRG)", y="Probability of outcome") + 
-  scale_colour_manual(values=assn.colours, name="Freedom of association") + 
-  theme_bw() + facet_wrap(~ all.comp)
+source("model_functions.R")
 
 
-# Draw random coefficients instead of mucking around with SEs and confints
-ologit.predict <- function(i, coefs, newdata, mod) {
-  # Pass the row number instead of the actual row so it can be 
-  # included in final data frame
-  x <- coefs[i,]
-  n.thetas <- length(mod$Theta)
-  theta.draw <- x[1:n.thetas]
-  coefs.draw <- x[(n.thetas+1):length(x)]
+#---------
+# Models
+#---------
+# TODO: Sim UDS < X
 
-  xbetas1 <- sweep(newdata, MARGIN=2, coefs.draw, `*`)
-  pred.mat1 <- data.frame(pred(eta=rowSums(xbetas1), theta=theta.draw)) %>%
-    set_colnames(levels(pawns.data$assn)) %>%
-    mutate(sim.round = i)
-}
+# Simple model using UDS
+model.simple.uds <- clm(assn ~ icrg_stability + yrsoffc + 
+                          years.since.comp + opp1vote, 
+                        data=pawns.data, link="logit", Hess=TRUE, 
+                        subset=(uds_mean < 0))
+summary(model.simple.uds)
 
-num.simulations <- 500
-draw <- MASS::mvrnorm(num.simulations, 
-                      c(model2$Theta, model2$beta, unlist(model2$ST)), 
-                      vcov(model2))
+newdata <- model.simple.uds$model %>% select(-1)
 
-sim.predict <- lapply(1:nrow(draw), FUN=ologit.predict,
-                      coefs=draw, newdata=newdata, mod=model2)
+fitted.values <- data.frame(predict(model.simple.uds, newdata)$fit) %>%
+  set_colnames(gsub("\\.", " ", colnames(.)))  # Remove the .
 
-plot.data <- newdata %>% cbind(bind_rows(sim.predict)) %>%
-  gather(assn, assn.prob, -c(1:ncol(newdata), sim.round)) %>%
-  mutate(all.comp = factor(all.comp, labels=c("Not competitive", "Competitive")))
-
-# http://www.colourlovers.com/palette/110225/Vintage_Modern
-assn.colours <- c("#8C2318", "#F2C45A", "#88A65E")
-p <- ggplot(plot.data, aes(x=icrg_stability, y=assn.prob, colour=assn)) + 
-  geom_line(aes(group=interaction(sim.round, assn)), alpha=0.03, size=1) + 
-  geom_line(data=plot.data.single, size=2) +
-  labs(x="Government stability (ICRG)", y="Probability of outcome") + 
-  scale_colour_manual(values=assn.colours, name="Freedom of association") + 
-  theme_bw() + theme(legend.position = "bottom") + facet_wrap(~ all.comp)
-p
-ggsave(p, filename="example.png", width=8, height=8, units="in")
+sep.plot(fitted.values, actual.char=as.character(model.simple.uds$model[,1]), 
+         actual.levels=rev(levels(pawns.data$assn)))
 
 
+# Simple model using polity
+model.simple.polity <- clm(assn ~ icrg_stability + yrsoffc + 
+                             years.since.comp + opp1vote, 
+                           data=pawns.data, link="logit", Hess=TRUE, 
+                           subset=(polity2 < -5))
+summary(model.simple.polity)
 
-# Findings, kind of
-# Convergence between sever and unrestricted with ~ icrg + uds and no year
-# Prob of severe restrictions decrease in low polity, like polity=-6 with ~ icrg + polity2 + year=1996
-# Same when using uds_mean + year
+newdata <- model.simple.polity$model %>% select(-1)
+
+fitted.values <- data.frame(predict(model.simple.polity, newdata)$fit) %>%
+  set_colnames(gsub("\\.", " ", colnames(.)))  # Remove the .
+
+sep.plot(fitted.values, actual.char=as.character(model.simple.polity$model[,1]), 
+         actual.levels=rev(levels(pawns.data$assn)))
+
+
+# Model + controls with UDS
+model.big.uds <- clm(assn ~ icrg_stability + yrsoffc + 
+                       years.since.comp + opp1vote + 
+                       physint + gdpcap.log + population.log + 
+                       oda.log + globalization, 
+                     data=pawns.data, link="logit", Hess=TRUE, 
+                     subset=(uds_mean < 0))
+summary(model.big.uds)
+
+newdata <- model.big.uds$model %>% select(-1)
+
+fitted.values <- data.frame(predict(model.big.uds, newdata)$fit) %>%
+  set_colnames(gsub("\\.", " ", colnames(.)))  # Remove the .
+
+sep.plot(fitted.values, actual.char=as.character(model.big.uds$model[,1]), 
+         actual.levels=rev(levels(pawns.data$assn)))
+
+
+# Model + controls with polity
+model.big.polity <- clm(assn ~ icrg_stability + yrsoffc + 
+                          years.since.comp + opp1vote + 
+                          physint + gdpcap.log + population.log + 
+                          oda.log + globalization, 
+                        data=pawns.data, link="logit", Hess=TRUE, 
+                        subset=(polity2 < -5))
+summary(model.big.polity)
+
+newdata <- model.big.polity$model %>% select(-1)
+
+fitted.values <- data.frame(predict(model.big.polity, newdata)$fit) %>%
+  set_colnames(gsub("\\.", " ", colnames(.)))  # Remove the .
+
+sep.plot(fitted.values, actual.char=as.character(model.big.polity$model[,1]), 
+         actual.levels=rev(levels(pawns.data$assn)))
+
+
+# Model + controls + random effects with UDS
+model.full.uds <- clmm(assn ~ icrg_stability + yrsoffc + 
+                        years.since.comp + opp1vote + 
+                        physint + gdpcap.log + population.log + 
+                        oda.log + globalization + (1|year) + (1|country), 
+                      data=pawns.data, link="logit", Hess=TRUE, 
+                      subset=(uds_mean < 0))
+summary(model.full.uds)
+
+newdata <- model.full.uds$model %>% select(-1) %>%
+  mutate(year = 0, country = 0)
+
+fitted.values <- fake.predict.clmm(model.full.uds, newdata)
+
+sep.plot(fitted.values, actual.char=as.character(model.full.uds$model[,1]), 
+         actual.levels=rev(levels(pawns.data$assn)))
+
+
+# Model + controls + random effects with polity
+model.full.polity <- clmm(assn ~ icrg_stability + yrsoffc + 
+                            years.since.comp + opp1vote + 
+                            physint + gdpcap.log + population.log + 
+                            oda.log + globalization + (1|year) + (1|country), 
+                          data=pawns.data, link="logit", Hess=TRUE, 
+                          subset=(polity2 < -5))
+summary(model.full.polity)
+
+newdata <- model.full.polity$model %>% select(-1) %>%
+  mutate(year = 0, country = 0)
+
+fitted.values <- fake.predict.clmm(model.full.polity, newdata)
+
+sep.plot(fitted.values, actual.char=as.character(model.full.polity$model[,1]), 
+         actual.levels=rev(levels(pawns.data$assn)))
+
+thetas <- rbind(model.simple.uds$Theta, model.simple.polity$Theta, 
+                model.big.uds$Theta, model.big.polity$Theta, 
+                model.full.uds$Theta, model.full.polity$Theta)
+
+extra.lines <- list(c("Severely restricted|Limited", round(thetas[,1], 3)),
+                    c("Limited|Unrestricted", round(thetas[,2], 3)),
+                    c("Random country and year effects", c(rep("No", 4), rep("Yes", 2))))
+
+stargazer(model.simple.uds, model.simple.polity, model.big.uds, model.big.polity, 
+          fake.clm(model.full.uds), fake.clm(model.full.polity), type="text",
+          add.lines = extra.lines)
