@@ -57,10 +57,11 @@ get.increase <- function(x) {
 # CIRI Human Rights Data
 # http://www.humanrightsdata.com/
 ciri <- read.csv("raw_data/CIRI Data 1981_2011 2014.04.14.csv") %>%
-  select(year = YEAR, cow = COW, assn = ASSN) %>%
+  select(year = YEAR, cow = COW, assn = ASSN, physint = PHYSINT) %>%
   # Handle duplicate COWs like USSR and Yugoslavia where names change
   group_by(year, cow) %>%
-  summarize(assn = max(assn, na.rm=TRUE)) %>%
+  summarize(assn = max(assn, na.rm=TRUE),
+            physint = max(physint, na.rm=TRUE)) %>%
   mutate(assn = ifelse(assn < 0, NA, assn),
          assn = factor(assn, labels=c("Severely restricted",
                                       "Limited", "Unrestricted"),
@@ -157,7 +158,8 @@ wdi.indicators <- c("NY.GDP.PCAP.KD",  # GDP per capita (constant 2005 US$)
                     "SP.POP.TOTL",  # Population, total
                     "DT.ODA.ALLD.CD")  # Net ODA and official aid received (current US$)
 wdi.countries <- countrycode(na.exclude(unique(ciri$cow)), "cown", "iso2c")
-wdi.raw <- WDI(wdi.countries, wdi.indicators, extra=TRUE, start=1981, end=2014)
+wdi.raw <- suppressWarnings(WDI(wdi.countries, wdi.indicators, 
+                                extra=TRUE, start=1981, end=2014))
 
 wdi.clean <- wdi.raw %>%
   rename(gdpcap = NY.GDP.PCAP.KD, gdp = NY.GDP.MKTP.KD, 
@@ -196,6 +198,9 @@ pawns.data <- ciri %>%
   left_join(wdi.clean, by=c("year", "cow")) %>%
   left_join(kof, by=c("year", "cow")) %>%
   mutate(country = countrycode(cow, "cown", "country.name"),
-         iso3 = countrycode(cow, "cown", "iso3c"))
+         iso3 = countrycode(cow, "cown", "iso3c")) %>%
+  group_by(cow) %>%
+  arrange(year) %>%
+  mutate(assn.lead = factor(lead(assn)))
 
 save(pawns.data, file="data/pawns_clean.RData")
