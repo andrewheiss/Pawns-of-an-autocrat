@@ -11,8 +11,42 @@ library(countrycode)
 #-------------------
 # Useful functions
 #-------------------
+# What it says on the proverbial tin: convert -999 to NA
 fix.999 <- function(x) {
   ifelse(x == -999, NA, x)
+}
+
+# Calculate the number of years since an election based on a boolean vector 
+# indicating if the running total should be increased
+calc.years.since.comp <- function(x) {
+  rle.x <- rle(x)$lengths
+  as.numeric(unlist(sapply(split(x, rep(seq(along = rle.x), rle.x)), cumsum)))
+}
+
+# Holy crap this is complicated.
+# If a competitive election has happened already, then figure out if the 
+# running total of years since election needs to be increased. This marks years 
+# *before* any competitive election as missing. For example, if country A 
+# doesn't hold an election until 1960, the years from 1945-59 will be NA.
+get.increase <- function(x) {
+  has.been.competitive <- FALSE
+  increase <- logical(length(x))
+  for(i in 1:length(x)) {
+    if(!is.na(x[i]) & x[i] == TRUE) {
+      has.been.competitive <- TRUE
+    } else {
+      increase[i] <- NA
+    }
+    
+    if(has.been.competitive) {
+      if(x[i] == FALSE | is.na(x[i])) {
+        increase[i] <- TRUE
+      } else {
+        increase[i] <- FALSE
+      }
+    }
+  }
+  return(increase)
 }
 
 
@@ -43,6 +77,16 @@ nelda <- read.dta("raw_data/nelda.dta") %>%
   group_by(ccode, year) %>%
   summarise(all.comp = all(competitive), num.elections = n()) %>%
   rename(cow = ccode)
+
+# Years since last competitive election
+# Get every year
+nelda.full <- expand.grid(cow = unique(nelda$cow),
+                          year = min(nelda$year):max(nelda$year)) %>%
+  arrange(cow, year) %>%
+  left_join(nelda, by=c("cow", "year")) %>%
+  group_by(cow) %>%
+  mutate(years.since.comp = calc.years.since.comp(get.increase(all.comp)),
+         num.elections = ifelse(is.na(num.elections), 0, num.elections))
 
 
 # Database of Political Institutions 2012
@@ -110,7 +154,7 @@ media.freedom <- read.csv("raw_data/Global_Media_Freedom_Data.csv") %>%
 # Merge all that data!
 #-----------------------  
 pawns.data <- ciri %>%
-  left_join(nelda, by=c("year", "cow")) %>%
+  left_join(nelda.full, by=c("year", "cow")) %>%
   left_join(pol.inst, by=c("year", "cow")) %>%
   left_join(uds, by=c("year", "cow")) %>%
   left_join(icrg, by=c("year", "cow")) %>%
