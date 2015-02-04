@@ -6,6 +6,7 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(countrycode)
+library(WDI)
 
 
 #-------------------
@@ -150,6 +151,30 @@ media.freedom <- read.csv("raw_data/Global_Media_Freedom_Data.csv") %>%
                               ordered=TRUE))
 
 
+# World Bank World Development Indicators (WDI)
+wdi.indicators <- c("NY.GDP.PCAP.KD",  # GDP per capita (constant 2005 US$)
+                    "NY.GDP.MKTP.KD",  # GDP (constant 2005 US$)
+                    "SP.POP.TOTL",  # Population, total
+                    "DT.ODA.ALLD.CD")  # Net ODA and official aid received (current US$)
+wdi.countries <- countrycode(na.exclude(unique(ciri$cow)), "cown", "iso2c")
+wdi.raw <- WDI(wdi.countries, wdi.indicators, extra=TRUE, start=1981, end=2014)
+
+wdi.clean <- wdi.raw %>%
+  rename(gdpcap = NY.GDP.PCAP.KD, gdp = NY.GDP.MKTP.KD, 
+         population = SP.POP.TOTL, oda = DT.ODA.ALLD.CD) %>%
+  mutate(gdpcap.log = log(gdpcap), gdp.log = log(gdp),
+         population.log = log(population)) %>%
+  mutate(gdpcap.log = log(gdpcap), gdp.log = log(gdp),
+         population.log = log(population)) %>%
+  # Ignore negative values of oda
+  mutate(oda.log = sapply(oda, FUN=function(x) ifelse(x < 0, NA, log1p(x)))) %>%
+  mutate(cow = countrycode(iso2c, "iso2c", "cown"),
+         region = factor(region),  # Get rid of unused levels first
+         region = factor(region, labels = 
+                           gsub(" \\(all income levels\\)", "", levels(region)))) %>%
+  select(-c(iso2c, iso3c, country, capital, longitude, latitude, income, lending))
+
+
 #-----------------------
 # Merge all that data!
 #-----------------------  
@@ -160,6 +185,7 @@ pawns.data <- ciri %>%
   left_join(icrg, by=c("year", "cow")) %>%
   left_join(p4, by=c("year", "cow")) %>%
   left_join(media.freedom, by=c("year", "cow")) %>%
+  left_join(wdi.clean, by=c("year", "cow")) %>%
   mutate(country = countrycode(cow, "cown", "country.name"),
          iso3 = countrycode(cow, "cown", "iso3c"))
 
