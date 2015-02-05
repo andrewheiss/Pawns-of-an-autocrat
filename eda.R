@@ -91,7 +91,7 @@ ggplot(icrg.data1, aes(x=year, y=icrg_stability, group=year)) + geom_violin() + 
 
 # Regime competitiveness
 #-----------------------
-
+ggplot(pawns.data, aes(x=years.since.comp)) + geom_histogram()
 
 
 # Other controls
@@ -124,7 +124,10 @@ ggplot(plot.data, aes(x=assn, y=icrg_stability)) +
 
 
 # competitiveness + assn
+plot.data <- pawns.data %>%
+  select(year, country, assn, all.comp) %>% na.omit()
 
+ggplot(plot.data, aes(x=assn))
 
 # competitiveness + uds
 
