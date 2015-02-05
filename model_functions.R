@@ -118,7 +118,30 @@ sep.plot <- function(pred.mat, actual.char, actual.levels) {
     theme(line = element_blank(), axis.text = element_blank(), 
           axis.ticks = element_blank(), axis.title = element_blank(),
           panel.border = element_blank(),
-          #strip.text=element_text(size=rel(1), family="Source Sans Pro Semibold"),
+          strip.text=element_text(size=rel(1), family="Source Sans Pro Semibold"),
           strip.background=element_rect(fill=NA, colour=NA)) + 
     facet_wrap(~ plot.level, ncol=1)
+}
+
+
+theme_clean <- function(base_size=12, base_family="Source Sans Pro Light", 
+                        legend.bottom=FALSE) {
+  ret <- theme_bw(base_size, base_family) + 
+    theme(panel.background = element_rect(fill="#ffffff", colour=NA),
+          axis.title.x=element_text(vjust=-0.2), axis.title.y=element_text(vjust=1.5),
+          title=element_text(vjust=1.2, family="Source Sans Pro Semibold"),
+          panel.border = element_blank(), axis.line=element_blank(),
+          panel.grid.minor=element_blank(), 
+          axis.ticks=element_blank(), 
+          axis.title=element_text(size=rel(0.8), family="Source Sans Pro Semibold"),
+          strip.text=element_text(size=rel(1), family="Source Sans Pro Semibold"),
+          strip.background=element_rect(fill="#ffffff", colour=NA),
+          panel.margin.y=unit(1.5, "lines"))
+  
+  if (legend.bottom) {
+    ret <- ret + theme(legend.position="bottom", legend.margin=unit(0, "lines"),
+                       plot.margin=unit(c(1, 1, -0.5, 0.5), "lines"))
+  }
+  
+  ret
 }
