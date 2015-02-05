@@ -18,11 +18,14 @@ source("model_functions.R")
 #---------
 # TODO: Sim UDS < X
 
+uds.threshold <- 0
+polity.threshold <- 0
+
 # Simple model using UDS
 model.simple.uds <- clm(assn ~ icrg_stability + yrsoffc + 
                           years.since.comp + opp1vote, 
                         data=pawns.data, link="logit", Hess=TRUE, 
-                        subset=(uds_mean < 0))
+                        subset=(uds_mean < uds.threshold))
 summary(model.simple.uds)
 
 newdata <- model.simple.uds$model %>% select(-1)
@@ -38,7 +41,7 @@ sep.plot(fitted.values, actual.char=as.character(model.simple.uds$model[,1]),
 model.simple.polity <- clm(assn ~ icrg_stability + yrsoffc + 
                              years.since.comp + opp1vote, 
                            data=pawns.data, link="logit", Hess=TRUE, 
-                           subset=(polity2 < -5))
+                           subset=(polity2 < polity.threshold))
 summary(model.simple.polity)
 
 newdata <- model.simple.polity$model %>% select(-1)
@@ -56,7 +59,7 @@ model.big.uds <- clm(assn ~ icrg_stability + yrsoffc +
                        physint + gdpcap.log + population.log + 
                        oda.log + globalization, 
                      data=pawns.data, link="logit", Hess=TRUE, 
-                     subset=(uds_mean < 0))
+                     subset=(uds_mean < uds.threshold))
 summary(model.big.uds)
 
 newdata <- model.big.uds$model %>% select(-1)
@@ -74,7 +77,7 @@ model.big.polity <- clm(assn ~ icrg_stability + yrsoffc +
                           physint + gdpcap.log + population.log + 
                           oda.log + globalization, 
                         data=pawns.data, link="logit", Hess=TRUE, 
-                        subset=(polity2 < -5))
+                        subset=(polity2 < polity.threshold))
 summary(model.big.polity)
 
 newdata <- model.big.polity$model %>% select(-1)
@@ -92,7 +95,7 @@ model.full.uds <- clmm(assn ~ icrg_stability + yrsoffc +
                         physint + gdpcap.log + population.log + 
                         oda.log + globalization + (1|year) + (1|country), 
                       data=pawns.data, link="logit", Hess=TRUE, 
-                      subset=(uds_mean < 0))
+                      subset=(uds_mean < uds.threshold))
 summary(model.full.uds)
 
 newdata <- model.full.uds$model %>% select(-1) %>%
@@ -110,7 +113,7 @@ model.full.polity <- clmm(assn ~ icrg_stability + yrsoffc +
                             physint + gdpcap.log + population.log + 
                             oda.log + globalization + (1|year) + (1|country), 
                           data=pawns.data, link="logit", Hess=TRUE, 
-                          subset=(polity2 < -5))
+                          subset=(polity2 < polity.threshold))
 summary(model.full.polity)
 
 newdata <- model.full.polity$model %>% select(-1) %>%
