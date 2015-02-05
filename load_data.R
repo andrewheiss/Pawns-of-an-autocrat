@@ -97,6 +97,7 @@ pol.inst <- read.dta("raw_data/DPI2012.dta") %>%
   filter(!countryname %in% c("Turk Cyprus", "PRK")) %>%
   mutate(yrsoffc = fix.999(yrsoffc), oppfrac = fix.999(oppfrac),
          opp1seat = fix.999(opp1seat), totalseats = fix.999(totalseats),
+         opp1vote = fix.999(opp1vote),
          finittrm = factor(ifelse(finittrm == -999, NA, finittrm), 
                            labels=c("No", "Yes"))) %>%
   mutate(countryname = ifelse(countryname == "UAE", 
