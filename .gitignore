@@ -5,3 +5,6 @@ raw_data/*
 .RData
 .Rhistory
 .Rproj.user
+
+# Output
+*.pdf

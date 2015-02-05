@@ -1,9 +1,6 @@
 TODO: 
 
-* theme_ath() too miminalist - add axes, gridlines
 * Visualize all variables
-* Make a running variable for stability (years since last competititive election?)
-* Build models and visualize them
 * Figure out panel corrections for standard errors, clustering, serial autocorrelation, etc.
 * Simulate UDS cutoffs, run models for simulated data, plot accordingly
 * Lag?
