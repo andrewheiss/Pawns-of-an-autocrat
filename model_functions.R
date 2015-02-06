@@ -53,6 +53,49 @@ fake.predict.clmm <- function(model, newdata) {
 }
 
 
+# Draw random coefficients instead of mucking around with SEs and confints
+ologit.predict <- function(i, coefs, newdata, mod) {
+  pred <- function(eta, theta, cat = 1:(length(theta) + 1), inv.link = plogis) {
+    Theta <- c(-1000, theta, 1000)
+    sapply(cat, function(j) inv.link(Theta[j + 1] - eta) - inv.link(Theta[j] - eta))
+  }
+  # Pass the row number instead of the actual row so it can be 
+  # included in final data frame
+  x <- coefs[i,]
+  n.thetas <- length(mod$Theta)
+  theta.draw <- x[1:n.thetas]
+  coefs.draw <- x[(n.thetas+1):length(x)]
+  
+  xbetas1 <- sweep(newdata, MARGIN=2, coefs.draw, `*`)
+  pred.mat1 <- data.frame(pred(eta=rowSums(xbetas1), theta=theta.draw)) %>%
+    set_colnames(levels(pawns.data$assn)) %>%
+    mutate(sim.round = i)
+}
+
+
+# Extract coefficients and calculate 95% confidence interval for each
+extract.coef.plot <- function(x, models, names) {
+  multiplier <- qnorm(1 - 0.05 / 2)
+  current.model <- models[[x]]
+  
+  coefs <- current.model$coefficients
+  
+  if(current.model$call[1] == "clm()") {
+    errs <- sqrt(diag(vcov(current.model)))
+  } else {
+    n.coef <- length(current.model$coefficients)
+    errs <- sqrt(diag(vcov(current.model)[1:n.coef, 1:n.coef]))
+  }
+  
+  data_frame(estimate = current.model$coefficients, 
+             stderr = errs) %>%
+    mutate(IV = row.names(.)) %>% tail(-2) %>%
+    mutate(ymin = estimate - (multiplier * stderr),
+           ymax = estimate + (multiplier * stderr),
+           model.name = names[x])
+}
+
+
 # Create a separation plot for an ordered logistic regression model using ggplot
 # Arguments:
 #  - pred.mat = a dataframe of predicted probabilities for each response level
