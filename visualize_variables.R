@@ -1,5 +1,3 @@
-# Exploratory data analysis
-
 #--------------------------
 # Load libraries and data
 #--------------------------
@@ -10,6 +8,7 @@ library(grid)
 library(scales)
 
 load("data/pawns_clean.RData")
+source("general_functions.R")
 
 
 #---------------------
