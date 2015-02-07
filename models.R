@@ -11,12 +11,7 @@ library(stargazer)
 
 # Load data and functions
 load("data/pawns_clean.RData")
-source("model_functions.R")
-
-
-# http://www.colourlovers.com/palette/110225/Vintage_Modern
-assn.colours <- c("#8C2318", "#F2C45A", "#88A65E")
-model.colours <- c("#1f78b4", "#ff7f00", "#6a3d9a")
+source("general_functions.R")
 
 
 #---------
