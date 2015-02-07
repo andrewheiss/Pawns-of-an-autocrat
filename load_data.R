@@ -153,6 +153,11 @@ media.freedom <- read.csv("raw_data/Global_Media_Freedom_Data.csv") %>%
                               ordered=TRUE))
 
 
+# Data from Murdie:2013a
+murdie <- read.dta("raw_data/11558_2013_9180_MOESM1_ESM.dta") %>%
+  select(year, cow=cowcode, countngo)
+  
+
 # World Bank World Development Indicators (WDI)
 wdi.indicators <- c("NY.GDP.PCAP.KD",  # GDP per capita (constant 2005 US$)
                     "NY.GDP.MKTP.KD",  # GDP (constant 2005 US$)
@@ -198,6 +203,7 @@ pawns.data <- ciri %>%
   left_join(media.freedom, by=c("year", "cow")) %>%
   left_join(wdi.clean, by=c("year", "cow")) %>%
   left_join(kof, by=c("year", "cow")) %>%
+  left_join(murdie, by=c("year", "cow")) %>%
   mutate(country = countrycode(cow, "cown", "country.name"),
          iso3 = countrycode(cow, "cown", "iso3c")) %>%
   group_by(cow) %>%
