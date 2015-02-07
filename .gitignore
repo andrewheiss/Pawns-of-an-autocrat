@@ -8,3 +8,10 @@ raw_data/*
 
 # Output
 *.pdf
+
+# Writing
+Writing/vc*
+Writing/*.pdf
+
+# Automation
+.shastore
