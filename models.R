@@ -14,6 +14,11 @@ load("data/pawns_clean.RData")
 source("model_functions.R")
 
 
+# http://www.colourlovers.com/palette/110225/Vintage_Modern
+assn.colours <- c("#8C2318", "#F2C45A", "#88A65E")
+model.colours <- c("#1f78b4", "#ff7f00", "#6a3d9a")
+
+
 #---------
 # Models
 #---------
@@ -164,19 +169,24 @@ coef.names.clean <- c("Government stability (ICRG)", "Years executive in office"
 coef.plot.data <- bind_rows(lapply(1:length(model.list), FUN=extract.coef.plot, 
                                    models=model.list, names=model.names)) %>%
   mutate(IV = factor(as.numeric(IV), labels=coef.names.clean, ordered=TRUE),
-         IV = factor(IV, levels=rev(levels(IV))))
+         IV = factor(IV, levels=rev(levels(IV))),
+         model.name = factor(model.name, levels=rev(model.names), ordered=TRUE))
 
 ggplot(coef.plot.data, aes(x=IV, y=estimate, colour=model.name)) + 
-  geom_hline(yintercept=0, colour="red4", alpha=0.6, size=1) + 
-  geom_pointrange(aes(ymin=ymin, ymax=ymax), size=.75, position=position_dodge(width=.75)) + 
+  geom_hline(yintercept=0, colour="#8C2318", alpha=0.6, size=1) + 
+  geom_pointrange(aes(ymin=ymin, ymax=ymax), size=.75, 
+                  position=position_dodge(width=.75)) + 
+  scale_colour_manual(values=model.colours, name="", 
+                      guide=guide_legend(reverse=TRUE)) + 
   labs(x=NULL, y="Log odds") + 
-  coord_flip() + theme_clean()
-
+  coord_flip() + 
+  theme_clean(legend.bottom = TRUE) + 
+  theme(legend.key = element_blank())
 
 # Predicted probabilities
 newdata <- expand.grid(icrg_stability = mean(pawns.data$icrg_stability, na.rm=TRUE),
                        yrsoffc = mean(pawns.data$yrsoffc, na.rm=TRUE),
-                       years.since.comp = c(4, 8, 16),
+                       years.since.comp = c(5, 15),
                        opp1vote = seq(0, 50, by=5),
                        polity2 = c(-6, 6),
                        physint = mean(pawns.data$physint, na.rm=TRUE),
@@ -200,15 +210,7 @@ plot.data.single <- cbind(newdata, pred.mat.polity) %>%
   mutate(polity2 = factor(polity2, labels=c("Autocracy", "Democracy")),
          opp1vote = opp1vote/100)
 
-# Plot
-assn.colours <- c("#8C2318", "#F2C45A", "#88A65E")
-ggplot(plot.data.single, aes(x=opp1vote, y=assn.prob, colour=assn)) + 
-  geom_line(size=2) + 
-  labs(x="Opposition vote share (%)", y="Probability of outcome") + 
-  scale_colour_manual(values=assn.colours, name="Freedom of association") + 
-  theme_clean() + facet_wrap(~ polity2 + years.since.comp)
-
-
+# Simulations
 num.simulations <- 500
 mu <- c(model.full.polity$Theta, model.full.polity$beta, unlist(model.full.polity$ST))
 draw <- MASS::mvrnorm(num.simulations, mu, vcov(model.full.polity))
@@ -225,8 +227,6 @@ plot.data <- newdata %>% cbind(bind_rows(sim.predict)) %>%
   mutate(polity2 = factor(polity2, labels=c("Autocracy", "Democracy")),
          opp1vote = opp1vote/100)
 
-# http://www.colourlovers.com/palette/110225/Vintage_Modern
-assn.colours <- c("#8C2318", "#F2C45A", "#88A65E")
 p <- ggplot(plot.data, aes(x=opp1vote, y=assn.prob, colour=assn)) + 
   geom_line(aes(group=interaction(sim.round, assn)), alpha=0.01, size=1) + 
   geom_line(data=plot.data.single, size=2) +
@@ -246,7 +246,7 @@ ggsave(p, filename="fancy_plot.pdf", width=10, height=7, units="in", device=cair
 
 # Stability + yrsoffc
 newdata <- expand.grid(icrg_stability = seq(0, 12, by=0.5),
-                       yrsoffc = c(4, 8, 12),
+                       yrsoffc = c(5, 15),
                        years.since.comp = mean(pawns.data$years.since.comp, na.rm=TRUE),
                        opp1vote = mean(pawns.data$opp1vote, na.rm=TRUE),
                        polity2 = c(-6, 6), 
@@ -270,15 +270,7 @@ plot.data.single <- cbind(newdata, pred.mat.polity) %>%
                             yrsoffc), "years in office"))) %>%
   mutate(polity2 = factor(polity2, labels=c("Autocracy", "Democracy")))
 
-# Plot
-assn.colours <- c("#8C2318", "#F2C45A", "#88A65E")
-ggplot(plot.data.single, aes(x=icrg_stability, y=assn.prob, colour=assn)) + 
-  geom_line(size=2) + 
-  labs(x="Government stability (ICRG)", y="Probability of outcome") + 
-  scale_colour_manual(values=assn.colours, name="Freedom of association") + 
-  theme_bw() + facet_wrap(~ polity2 + yrsoffc)
-
-
+# Simulations
 num.simulations <- 500
 mu <- c(model.full.polity$Theta, model.full.polity$beta, unlist(model.full.polity$ST))
 draw <- MASS::mvrnorm(num.simulations, mu, vcov(model.full.polity))
@@ -294,8 +286,6 @@ plot.data <- newdata %>% cbind(bind_rows(sim.predict)) %>%
                             yrsoffc), "years in office"))) %>%
   mutate(polity2 = factor(polity2, labels=c("Autocracy", "Democracy")))
 
-# http://www.colourlovers.com/palette/110225/Vintage_Modern
-assn.colours <- c("#8C2318", "#F2C45A", "#88A65E")
 p1 <- ggplot(plot.data, aes(x=icrg_stability, y=assn.prob, colour=assn)) + 
   geom_line(aes(group=interaction(sim.round, assn)), alpha=0.01, size=1) + 
   geom_line(data=plot.data.single, size=2) +
