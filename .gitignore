@@ -7,7 +7,7 @@ raw_data/*
 .Rproj.user
 
 # Output
-*.pdf
+output/*
 
 # Writing
 Writing/vc*
