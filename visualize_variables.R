@@ -6,6 +6,7 @@ library(ggplot2)
 library(gridExtra)
 library(grid)
 library(scales)
+library(Cairo)
 
 load("data/pawns_clean.RData")
 source("general_functions.R")
@@ -16,8 +17,6 @@ source("general_functions.R")
 #---------------------
 # Freedom of Assembly and Association (assn)
 # Source: CIRI Human Rights Dataset (www.humanrightsdata.com)
-# Description: "This variable indicates the extent to which the freedoms of assembly and association are subject to actual governmental limitations or restrictions (as opposed to strictly legal protections). A score of 0 indicates that citizens’ rights to freedom of assembly or association were severely restricted or denied completely to all citizens; a score of 1 indicates that these rights were limited for all citizens or severely restricted or denied for select groups; and a score of 2 indicates that these rights were virtually unrestricted and freely enjoyed by practically all citizens in a given year."
-
 assn.data <- pawns.data %>%
   select(country, year, assn) %>% na.omit() %>% 
   count(assn, year) %>% group_by(assn) %>% 
@@ -33,7 +32,9 @@ assn.plot <- ggplot(assn.data, aes(x=assn, y=assn.mean, fill=assn)) +
        y="Average number of countries per year") + 
   scale_fill_manual(values=assn.colours, guide=FALSE) + 
   theme_clean() + theme(panel.grid.major.x=element_blank())
-assn.plot
+
+ggsave(assn.plot, filename="output/assn_summary.pdf", 
+       width=2.5, height=1.5, units="in", device=cairo_pdf, scale=2)
 
 
 #------------------------
@@ -47,14 +48,30 @@ plot.data <- pawns.data %>%
   mutate(assn = factor(assn, levels=rev(levels(assn)))) %>% 
   na.omit()
 
-regime.plot <- ggplot(plot.data, aes(x=assn, y=polity2, fill=assn)) + 
-  geom_hline(yintercept=c(-5, 5), colour="grey70", size=1) + 
+polity.plot <- ggplot(plot.data, aes(x=assn, y=polity2, fill=assn)) + 
+  geom_hline(yintercept=c(0), colour="grey70", size=1) + 
   geom_violin(colour=NA) + coord_flip() + 
   labs(x="Freedom of assembly and association (CIRI)",
        y="Polity IV score") +
   scale_fill_manual(values=rev(assn.colours), guide=FALSE) + 
   theme_clean()
-regime.plot
+
+
+plot.data <- pawns.data %>%
+  select(assn, uds_mean) %>% 
+  mutate(assn = factor(assn, levels=rev(levels(assn)))) %>% 
+  na.omit()
+
+uds.plot <- ggplot(plot.data, aes(x=assn, y=uds_mean, fill=assn)) + 
+  geom_hline(yintercept=c(0), colour="grey70", size=1) + 
+  geom_violin(colour=NA) + coord_flip() + 
+  labs(x=NULL, y="Mean UDS score") +
+  scale_fill_manual(values=rev(assn.colours), guide=FALSE) + 
+  theme_clean() + theme(axis.text.y=element_blank())
+
+regime_type_summary <- arrangeGrob(polity.plot, uds.plot, nrow=1)
+ggsave(regime_type_summary, filename="output/regime_type_summary.pdf", 
+       width=8, height=5, units="in", device=cairo_pdf)
 
 
 # Regime stability
@@ -84,10 +101,11 @@ years.office.plot <- ggplot(plot.data, aes(x=assn, y=yrsoffc, fill=assn)) +
   labs(x=NULL,
        y="Years executive has been in office") +
   scale_fill_manual(values=rev(assn.colours), guide=FALSE) + 
-  theme_clean()
+  theme_clean() + theme(axis.text.y=element_blank())
 
 stability <- arrangeGrob(icrg.plot, years.office.plot, nrow=1)
-stability
+ggsave(stability, filename="output/stability_summary.pdf", 
+       width=8, height=5, units="in", device=cairo_pdf)
 
 
 # Regime competitiveness
@@ -118,7 +136,8 @@ opp.vote.plot <- ggplot(plot.data, aes(x=assn, y=opp1vote, fill=assn)) +
        y="Vote share for largest opposition party") +
   scale_fill_manual(values=rev(assn.colours), guide=FALSE) + 
   scale_y_continuous(labels=percent) + 
-  theme_clean()
+  theme_clean() + theme(axis.text.y=element_blank())
 
 competitiveness <- arrangeGrob(years.comp.plot, opp.vote.plot, nrow=1)
-competitiveness
+ggsave(competitiveness, filename="output/competitiveness_summary.pdf", 
+       width=8, height=5, units="in", device=cairo_pdf)
