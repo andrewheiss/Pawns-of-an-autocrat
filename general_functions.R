@@ -107,7 +107,7 @@ extract.coef.plot <- function(x, models, names) {
 #  - actual.levels = the levels of the ordered factor (since the function 
 #    requires de-leveled responses)
 # Returns a ggplot plot
-sep.plot <- function(pred.mat, actual.char, actual.levels) {
+sep.plot <- function(pred.mat, actual.char, actual.levels, title=NULL) {
   # Returns a dataframe of predicted probabilities with actual = 1 
   # when the response outcome happens
   match.actual <- function(x, pred, actual) {
@@ -161,6 +161,7 @@ sep.plot <- function(pred.mat, actual.char, actual.levels) {
     geom_line(data=plot.all, aes(y=fitted, x = x), lwd = 0.8) + 
     geom_point(data=metadata, aes(x=marker, y=-0.05), shape=17, size=3) + 
     scale_fill_manual(values = c("grey90", "#00A0B0"), guide="none") +
+    labs(title=title) +
     theme_bw() + 
     theme(line = element_blank(), axis.text = element_blank(), 
           axis.ticks = element_blank(), axis.title = element_blank(),
