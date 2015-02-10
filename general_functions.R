@@ -165,7 +165,8 @@ sep.plot <- function(pred.mat, actual.char, actual.levels) {
     theme(line = element_blank(), axis.text = element_blank(), 
           axis.ticks = element_blank(), axis.title = element_blank(),
           panel.border = element_blank(),
-          strip.text=element_text(size=rel(1), family="Source Sans Pro Semibold"),
+          title=element_text(vjust=1.2, family="Source Sans Pro Semibold"),
+          strip.text=element_text(size=rel(1), family="Source Sans Pro Light"),
           strip.background=element_rect(fill=NA, colour=NA)) + 
     facet_wrap(~ plot.level, ncol=1)
 }
