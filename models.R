@@ -165,6 +165,7 @@ stargazer(model.simple.uds, model.simple.polity, model.big.uds, model.big.polity
           column.labels=model.names, model.names=FALSE,
           dep.var.labels.include=FALSE, no.space=TRUE,
           type="latex", out="output/all_models.tex", font.size="footnotesize",
+          title="Determinants of restrictions on freedom of assembly and association",
           add.lines=extra.lines, covariate.labels=coef.names,
           dep.var.caption="Freedom of association", notes.label="Notes:",
           notes=c("Reported coefficients are log odds."))
