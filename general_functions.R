@@ -72,7 +72,7 @@ ologit.predict <- function(i, coefs, newdata, mod) {
   
   xbetas1 <- sweep(newdata, MARGIN=2, coefs.draw, `*`)
   pred.mat1 <- data.frame(pred(eta=rowSums(xbetas1), theta=theta.draw)) %>%
-    set_colnames(levels(pawns.data$assn)) %>%
+    set_colnames(levels(cs.auth.data$assn)) %>%
     mutate(sim.round = i)
 }
 

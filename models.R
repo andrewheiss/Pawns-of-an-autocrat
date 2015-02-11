@@ -11,7 +11,7 @@ library(Cairo)
 library(stargazer)
 
 # Load data and functions
-load("data/pawns_clean.RData")
+load("data/cs_auth_clean.RData")
 source("general_functions.R")
 
 set.seed(1234)
@@ -28,7 +28,7 @@ polity.threshold <- 0
 # Simple model using UDS
 model.simple.uds <- clm(assn ~ icrg_stability + yrsoffc + 
                           years.since.comp + opp1vote + uds_mean, 
-                        data=pawns.data, link="logit", Hess=TRUE)
+                        data=cs.auth.data, link="logit", Hess=TRUE)
 # summary(model.simple.uds)
 
 # newdata <- model.simple.uds$model %>% select(-1)
@@ -37,13 +37,13 @@ model.simple.uds <- clm(assn ~ icrg_stability + yrsoffc +
 #   set_colnames(gsub("\\.", " ", colnames(.)))  # Remove the .
 # 
 # sep.plot(fitted.values, actual.char=as.character(model.simple.uds$model[,1]), 
-#          actual.levels=rev(levels(pawns.data$assn)))
+#          actual.levels=rev(levels(cs.auth.data$assn)))
 
 
 # Simple model using polity
 model.simple.polity <- clm(assn ~ icrg_stability + yrsoffc + 
                              years.since.comp + opp1vote + polity2, 
-                           data=pawns.data, link="logit", Hess=TRUE)
+                           data=cs.auth.data, link="logit", Hess=TRUE)
 # summary(model.simple.polity)
 
 newdata <- model.simple.polity$model %>% select(-1)
@@ -53,7 +53,7 @@ fitted.values <- data.frame(predict(model.simple.polity, newdata)$fit) %>%
 
 sep.plot1 <- sep.plot(fitted.values, 
                       actual.char=as.character(model.simple.polity$model[,1]), 
-                      actual.levels=levels(pawns.data$assn), 
+                      actual.levels=levels(cs.auth.data$assn), 
                       title="Simple model")
 
 
@@ -62,7 +62,7 @@ model.big.uds <- clm(assn ~ icrg_stability + yrsoffc +
                        years.since.comp + opp1vote + uds_mean + 
                        physint + gdpcap.log + population.log + 
                        oda.log + countngo + globalization, 
-                     data=pawns.data, link="logit", Hess=TRUE)
+                     data=cs.auth.data, link="logit", Hess=TRUE)
 # summary(model.big.uds)
 
 # newdata <- model.big.uds$model %>% select(-1)
@@ -71,7 +71,7 @@ model.big.uds <- clm(assn ~ icrg_stability + yrsoffc +
 #   set_colnames(gsub("\\.", " ", colnames(.)))  # Remove the .
 # 
 # sep.plot(fitted.values, actual.char=as.character(model.big.uds$model[,1]), 
-#          actual.levels=rev(levels(pawns.data$assn)))
+#          actual.levels=rev(levels(cs.auth.data$assn)))
 
 
 # Model + controls with polity
@@ -79,7 +79,7 @@ model.big.polity <- clm(assn ~ icrg_stability + yrsoffc +
                           years.since.comp + opp1vote + polity2 + 
                           physint + gdpcap.log + population.log + 
                           oda.log + countngo + globalization, 
-                        data=pawns.data, link="logit", Hess=TRUE)
+                        data=cs.auth.data, link="logit", Hess=TRUE)
 # summary(model.big.polity)
 
 newdata <- model.big.polity$model %>% select(-1)
@@ -89,17 +89,17 @@ fitted.values <- data.frame(predict(model.big.polity, newdata)$fit) %>%
 
 sep.plot2 <- sep.plot(fitted.values, 
                       actual.char=as.character(model.big.polity$model[,1]),
-                      actual.levels=levels(pawns.data$assn),
+                      actual.levels=levels(cs.auth.data$assn),
                       title="Full model")
 
 
 # Model + controls + random effects with UDS
 model.full.uds <- clmm(assn ~ icrg_stability + yrsoffc +
-                        years.since.comp + opp1vote + uds_mean + 
-                        physint + gdpcap.log + population.log + 
-                        oda.log + countngo + globalization + 
+                         years.since.comp + opp1vote + uds_mean + 
+                         physint + gdpcap.log + population.log + 
+                         oda.log + countngo + globalization + 
                          (1|year) + (1|country), 
-                      data=pawns.data, link="logit", Hess=TRUE)
+                       data=cs.auth.data, link="logit", Hess=TRUE)
 # summary(model.full.uds)
 
 # newdata <- model.full.uds$model %>% select(-1) %>%
@@ -108,7 +108,7 @@ model.full.uds <- clmm(assn ~ icrg_stability + yrsoffc +
 # fitted.values <- fake.predict.clmm(model.full.uds, newdata)
 # 
 # sep.plot(fitted.values, actual.char=as.character(model.full.uds$model[,1]), 
-#          actual.levels=rev(levels(pawns.data$assn)))
+#          actual.levels=rev(levels(cs.auth.data$assn)))
 
 
 # Model + controls + random effects with polity
@@ -117,7 +117,7 @@ model.full.polity <- clmm(assn ~ icrg_stability + yrsoffc +
                             physint + gdpcap.log + population.log + 
                             oda.log + countngo + globalization + 
                             (1|year) + (1|country), 
-                          data=pawns.data, link="logit", Hess=TRUE)
+                          data=cs.auth.data, link="logit", Hess=TRUE)
 # summary(model.full.polity)
 exp(coefficients(model.full.polity))
 
@@ -128,7 +128,7 @@ fitted.values <- fake.predict.clmm(model.full.polity, newdata)
 
 sep.plot3 <- sep.plot(fitted.values, 
                       actual.char=as.character(model.full.polity$model[,1]),
-                      actual.levels=levels(pawns.data$assn),
+                      actual.levels=levels(cs.auth.data$assn),
                       title="Full model + random effects")
 
 sep.plots <- arrangeGrob(sep.plot1, sep.plot2, sep.plot3, nrow=1)
@@ -205,17 +205,17 @@ ggsave(coef.plot, filename="output/coef_plot.pdf",
 
 
 # Predicted probabilities
-newdata <- expand.grid(icrg_stability = mean(pawns.data$icrg_stability, na.rm=TRUE),
-                       yrsoffc = mean(pawns.data$yrsoffc, na.rm=TRUE),
+newdata <- expand.grid(icrg_stability = mean(cs.auth.data$icrg_stability, na.rm=TRUE),
+                       yrsoffc = mean(cs.auth.data$yrsoffc, na.rm=TRUE),
                        years.since.comp = c(4, 8, 16),
                        opp1vote = seq(0, 50, by=5),
                        polity2 = c(-6, 6),
-                       physint = mean(pawns.data$physint, na.rm=TRUE),
-                       gdpcap.log = mean(pawns.data$gdpcap.log, na.rm=TRUE),
-                       population.log = mean(pawns.data$population.log, na.rm=TRUE),
-                       oda.log = mean(pawns.data$oda.log, na.rm=TRUE),
-                       countngo = mean(pawns.data$countngo, na.rm=TRUE),
-                       globalization = mean(pawns.data$globalization, na.rm=TRUE),
+                       physint = mean(cs.auth.data$physint, na.rm=TRUE),
+                       gdpcap.log = mean(cs.auth.data$gdpcap.log, na.rm=TRUE),
+                       population.log = mean(cs.auth.data$population.log, na.rm=TRUE),
+                       oda.log = mean(cs.auth.data$oda.log, na.rm=TRUE),
+                       countngo = mean(cs.auth.data$countngo, na.rm=TRUE),
+                       globalization = mean(cs.auth.data$globalization, na.rm=TRUE),
                        year = 0, country = 0)
 
 pred.mat.uds <- fake.predict.clmm(model.full.uds, newdata)
@@ -252,8 +252,8 @@ comp.pred.probs <- ggplot(plot.data, aes(x=opp1vote, y=assn.prob, colour=assn)) 
   geom_line(aes(group=interaction(sim.round, assn)), alpha=0.01, size=1) + 
   geom_line(data=plot.data.single, size=2) +
   labs(x="Opposition vote share", y="Probability of outcome") + 
-#   ggtitle(expression(atop("Predicted probabilities of freedom of association restrictions", 
-#                           atop("500 simulated draws. All variables held at their means."), ""))) +
+  #   ggtitle(expression(atop("Predicted probabilities of freedom of association restrictions", 
+  #                           atop("500 simulated draws. All variables held at their means."), ""))) +
   scale_colour_manual(values=assn.colours, name="Freedom of association") + 
   scale_y_continuous(labels=percent, breaks=seq(0, 0.8, 0.2)) + 
   scale_x_continuous(labels=percent) + 
@@ -268,15 +268,15 @@ ggsave(comp.pred.probs, filename="output/comp_pred_probs.pdf",
 # Stability + yrsoffc
 newdata <- expand.grid(icrg_stability = seq(0, 12, by=0.5),
                        yrsoffc = c(5, 15),
-                       years.since.comp = mean(pawns.data$years.since.comp, na.rm=TRUE),
-                       opp1vote = mean(pawns.data$opp1vote, na.rm=TRUE),
+                       years.since.comp = mean(cs.auth.data$years.since.comp, na.rm=TRUE),
+                       opp1vote = mean(cs.auth.data$opp1vote, na.rm=TRUE),
                        polity2 = c(-6, 6), 
-                       physint = mean(pawns.data$physint, na.rm=TRUE),
-                       gdpcap.log = mean(pawns.data$gdpcap.log, na.rm=TRUE),
-                       population.log = mean(pawns.data$population.log, na.rm=TRUE),
-                       oda.log = mean(pawns.data$oda.log, na.rm=TRUE),
-                       countngo = mean(pawns.data$countngo, na.rm=TRUE),
-                       globalization = mean(pawns.data$globalization, na.rm=TRUE),
+                       physint = mean(cs.auth.data$physint, na.rm=TRUE),
+                       gdpcap.log = mean(cs.auth.data$gdpcap.log, na.rm=TRUE),
+                       population.log = mean(cs.auth.data$population.log, na.rm=TRUE),
+                       oda.log = mean(cs.auth.data$oda.log, na.rm=TRUE),
+                       countngo = mean(cs.auth.data$countngo, na.rm=TRUE),
+                       globalization = mean(cs.auth.data$globalization, na.rm=TRUE),
                        year = 0, country = 0)
 
 pred.mat.uds <- fake.predict.clmm(model.full.uds, newdata)
@@ -311,8 +311,8 @@ stability.pred.probs <- ggplot(plot.data, aes(x=icrg_stability, y=assn.prob, col
   geom_line(aes(group=interaction(sim.round, assn)), alpha=0.01, size=1) + 
   geom_line(data=plot.data.single, size=2) +
   labs(x="Government stability (ICRG)", y="Probability of outcome") + 
-#   ggtitle(expression(atop("Predicted probabilities of freedom of association restrictions", 
-#                           atop("500 simulated draws. All variables held at their means."), ""))) +
+  #   ggtitle(expression(atop("Predicted probabilities of freedom of association restrictions", 
+  #                           atop("500 simulated draws. All variables held at their means."), ""))) +
   scale_colour_manual(values=assn.colours, name="Freedom of association") + 
   scale_y_continuous(labels=percent, breaks=seq(0, 0.8, 0.2)) + 
   theme_clean(legend.bottom = TRUE) + 

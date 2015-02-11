@@ -194,7 +194,7 @@ kof <- read.csv("raw_data/globalization_2014_long.csv", na.strings=".") %>%
 #-----------------------
 # Merge all that data!
 #-----------------------  
-pawns.data <- ciri %>%
+cs.auth.data <- ciri %>%
   left_join(nelda.full, by=c("year", "cow")) %>%
   left_join(pol.inst, by=c("year", "cow")) %>%
   left_join(uds, by=c("year", "cow")) %>%
@@ -210,4 +210,4 @@ pawns.data <- ciri %>%
   arrange(year) %>%
   mutate(assn.lead = factor(lead(assn)))
 
-save(pawns.data, file="data/pawns_clean.RData")
+save(cs.auth.data, file="data/cs_auth_clean.RData")

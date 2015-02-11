@@ -8,7 +8,7 @@ library(grid)
 library(scales)
 library(Cairo)
 
-load("data/pawns_clean.RData")
+load("data/cs_auth_clean.RData")
 source("general_functions.R")
 
 
@@ -17,7 +17,7 @@ source("general_functions.R")
 #---------------------
 # Freedom of Assembly and Association (assn)
 # Source: CIRI Human Rights Dataset (www.humanrightsdata.com)
-assn.data <- pawns.data %>%
+assn.data <- cs.auth.data %>%
   select(country, year, assn) %>% na.omit() %>% 
   count(assn, year) %>% group_by(assn) %>% 
   summarize(assn.n = length(n), assn.mean = mean(n),
@@ -43,7 +43,7 @@ ggsave(assn.plot, filename="output/assn_summary.pdf",
 
 # Regime type
 #------------
-plot.data <- pawns.data %>%
+plot.data <- cs.auth.data %>%
   select(assn, polity2) %>% 
   mutate(assn = factor(assn, levels=rev(levels(assn)))) %>% 
   na.omit()
@@ -57,7 +57,7 @@ polity.plot <- ggplot(plot.data, aes(x=assn, y=polity2, fill=assn)) +
   theme_clean()
 
 
-plot.data <- pawns.data %>%
+plot.data <- cs.auth.data %>%
   select(assn, uds_mean) %>% 
   mutate(assn = factor(assn, levels=rev(levels(assn)))) %>% 
   na.omit()
@@ -77,7 +77,7 @@ ggsave(regime_type_summary, filename="output/regime_type_summary.pdf",
 # Regime stability
 #-----------------
 # ICRG government stability (icrg_stability)
-plot.data <- pawns.data %>%
+plot.data <- cs.auth.data %>%
   select(assn, icrg_stability) %>% 
   mutate(assn = factor(assn, levels=rev(levels(assn)))) %>% 
   na.omit()
@@ -91,7 +91,7 @@ icrg.plot <- ggplot(plot.data, aes(x=assn, y=icrg_stability, fill=assn)) +
 
 
 # Years in office
-plot.data <- pawns.data %>%
+plot.data <- cs.auth.data %>%
   select(assn, yrsoffc) %>% 
   mutate(assn = factor(assn, levels=rev(levels(assn)))) %>% 
   na.omit()
@@ -110,7 +110,7 @@ ggsave(stability, filename="output/stability_summary.pdf",
 
 # Regime competitiveness
 #-----------------------
-plot.data <- pawns.data %>%
+plot.data <- cs.auth.data %>%
   select(assn, years.since.comp) %>% 
   filter(years.since.comp < 20) %>%
   mutate(assn = factor(assn, levels=rev(levels(assn)))) %>% 
@@ -124,7 +124,7 @@ years.comp.plot <- ggplot(plot.data, aes(x=assn, y=years.since.comp, fill=assn))
   theme_clean()
 
 
-plot.data <- pawns.data %>%
+plot.data <- cs.auth.data %>%
   select(assn, opp1vote) %>% 
   mutate(assn = factor(assn, levels=rev(levels(assn))),
          opp1vote = opp1vote / 100) %>% 
