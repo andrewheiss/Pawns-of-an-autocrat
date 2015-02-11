@@ -164,10 +164,10 @@ wdi.indicators <- c("NY.GDP.PCAP.KD",  # GDP per capita (constant 2005 US$)
                     "SP.POP.TOTL",  # Population, total
                     "DT.ODA.ALLD.CD")  # Net ODA and official aid received (current US$)
 wdi.countries <- countrycode(na.exclude(unique(ciri$cow)), "cown", "iso2c")
-wdi.raw <- suppressWarnings(WDI(wdi.countries, wdi.indicators, 
-                                extra=TRUE, start=1981, end=2014))
+wdi.raw <- WDI(country="all", wdi.indicators, extra=TRUE, start=1981, end=2014)
 
 wdi.clean <- wdi.raw %>%
+  filter(iso2c %in% wdi.countries) %>%
   rename(gdpcap = NY.GDP.PCAP.KD, gdp = NY.GDP.MKTP.KD, 
          population = SP.POP.TOTL, oda = DT.ODA.ALLD.CD) %>%
   mutate(gdpcap.log = log(gdpcap), gdp.log = log(gdp),
