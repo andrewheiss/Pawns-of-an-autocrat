@@ -197,10 +197,12 @@ coef.plot <- ggplot(coef.plot.data, aes(x=IV, y=estimate, colour=model.name)) +
                       guide=guide_legend(reverse=TRUE)) + 
   labs(x=NULL, y="Log odds") + 
   coord_flip() + 
-  theme_clean(legend.bottom = TRUE) + 
+  theme_clean(16, legend.bottom = TRUE) + 
   theme(legend.key = element_blank())
 
 ggsave(coef.plot, filename="output/coef_plot.pdf", 
+       width=8, height=5, units="in", device=cairo_pdf)
+ggsave(coef.plot, filename="output/coef_plot_presentation.pdf", 
        width=8, height=5, units="in", device=cairo_pdf)
 
 
@@ -257,9 +259,12 @@ comp.pred.probs <- ggplot(plot.data, aes(x=opp1vote, y=assn.prob, colour=assn)) 
   scale_colour_manual(values=assn.colours, name="Freedom of association") + 
   scale_y_continuous(labels=percent, breaks=seq(0, 0.8, 0.2)) + 
   scale_x_continuous(labels=percent) + 
-  theme_clean(legend.bottom = TRUE) + 
+  theme_clean(16, legend.bottom = TRUE) + 
   theme(legend.key = element_blank()) + 
   facet_wrap(~ polity2 + years.since.comp)
+
+ggsave(comp.pred.probs, filename="output/comp_pred_probs_presentation.pdf", 
+       width=14, height=7, units="in", device=cairo_pdf)
 
 ggsave(comp.pred.probs, filename="output/comp_pred_probs.pdf", 
        width=10, height=7, units="in", device=cairo_pdf)
@@ -315,9 +320,13 @@ stability.pred.probs <- ggplot(plot.data, aes(x=icrg_stability, y=assn.prob, col
   #                           atop("500 simulated draws. All variables held at their means."), ""))) +
   scale_colour_manual(values=assn.colours, name="Freedom of association") + 
   scale_y_continuous(labels=percent, breaks=seq(0, 0.8, 0.2)) + 
-  theme_clean(legend.bottom = TRUE) + 
+  theme_clean(16, legend.bottom = TRUE) + 
   theme(legend.key = element_blank()) + 
   facet_wrap(~ polity2 + yrsoffc)
 
+ggsave(stability.pred.probs, filename="output/stability_pred_probs_presentation.pdf", 
+       width=14, height=7, units="in", device=cairo_pdf)
+
 ggsave(stability.pred.probs, filename="output/stability_pred_probs.pdf", 
        width=10, height=7, units="in", device=cairo_pdf)
+

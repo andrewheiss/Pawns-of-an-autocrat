@@ -31,10 +31,14 @@ assn.plot <- ggplot(assn.data, aes(x=assn, y=assn.mean, fill=assn)) +
   labs(x="Freedom of assembly and association (CIRI)", 
        y="Average number of countries per year") + 
   scale_fill_manual(values=assn.colours, guide=FALSE) + 
-  theme_clean() + theme(panel.grid.major.x=element_blank())
+  theme_clean(16) + theme(panel.grid.major.x=element_blank())
 
 ggsave(assn.plot, filename="output/assn_summary.pdf", 
        width=2.5, height=1.5, units="in", device=cairo_pdf, scale=2)
+
+# theme_clean(16)
+ggsave(assn.plot, filename="output/assn_summary_presentation.pdf", 
+       width=7, height=3.5, units="in", device=cairo_pdf)
 
 
 #------------------------
@@ -87,7 +91,7 @@ icrg.plot <- ggplot(plot.data, aes(x=assn, y=icrg_stability, fill=assn)) +
   labs(x="Freedom of assembly and association (CIRI)",
        y="Government stability (ICRG)") +
   scale_fill_manual(values=rev(assn.colours), guide=FALSE) + 
-  theme_clean()
+  theme_clean(16)
 
 
 # Years in office
@@ -101,10 +105,12 @@ years.office.plot <- ggplot(plot.data, aes(x=assn, y=yrsoffc, fill=assn)) +
   labs(x=NULL,
        y="Years executive has been in office") +
   scale_fill_manual(values=rev(assn.colours), guide=FALSE) + 
-  theme_clean() + theme(axis.text.y=element_blank())
+  theme_clean(16) + theme(axis.text.y=element_blank())
 
 stability <- arrangeGrob(icrg.plot, years.office.plot, nrow=1)
 ggsave(stability, filename="output/stability_summary.pdf", 
+       width=8, height=5, units="in", device=cairo_pdf)
+ggsave(stability, filename="output/stability_summary_presentation.pdf", 
        width=8, height=5, units="in", device=cairo_pdf)
 
 
@@ -121,7 +127,7 @@ years.comp.plot <- ggplot(plot.data, aes(x=assn, y=years.since.comp, fill=assn))
   labs(x="Freedom of assembly and association (CIRI)",
        y="Years since a competitive election") +
   scale_fill_manual(values=rev(assn.colours), guide=FALSE) + 
-  theme_clean()
+  theme_clean(16)
 
 
 plot.data <- cs.auth.data %>%
@@ -136,8 +142,8 @@ opp.vote.plot <- ggplot(plot.data, aes(x=assn, y=opp1vote, fill=assn)) +
        y="Vote share for largest opposition party") +
   scale_fill_manual(values=rev(assn.colours), guide=FALSE) + 
   scale_y_continuous(labels=percent) + 
-  theme_clean() + theme(axis.text.y=element_blank())
+  theme_clean(16) + theme(axis.text.y=element_blank())
 
 competitiveness <- arrangeGrob(years.comp.plot, opp.vote.plot, nrow=1)
-ggsave(competitiveness, filename="output/competitiveness_summary.pdf", 
+ggsave(competitiveness, filename="output/competitiveness_summary_presentation.pdf", 
        width=8, height=5, units="in", device=cairo_pdf)
